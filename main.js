@@ -46,16 +46,7 @@ bot.on('text', async (ctx) => {
             ctx.replyWithHTML(formattedInfo);
 
             // Split the vehicle info and display it as buttons
-            const infoLines = vehicleInfo.split('\n');
-            const buttons = infoLines.map(line => {
-                const parts = line.split('\t');
-                if (parts.length === 2) {
-                    return [Markup.button.callback(parts[1], parts[0])];
-                } else {
-                    return null;
-                }
-            }).filter(btn => btn !== null);
-
+            
             // Send the buttons as an Inline Keyboard
             ctx.reply('T̷I̷R̷A̷B̷I̷M̷M̷E̷R̷');
 
