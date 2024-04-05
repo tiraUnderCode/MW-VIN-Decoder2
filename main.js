@@ -2,10 +2,14 @@ const { Telegraf, Markup } = require('telegraf');
 const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const axios = require('axios');
+const cheerio = require('cheerio');
+const TelegramBot = require('node-telegram-bot-api');
 
-const CHROMEDRIVER_PATH = './chromedrive';
+// تعريف توكن البوت
+const token = '6679199332:AAHqGIBwKE1_9XmK6fIANglEZQ78yzvHn-Q';
 
-const bot = new Telegraf('6879428578:AAHVQeIwfMBMQUvnoV6hwumA5wgvXS0Mrr8');
+// إنشاء بوت تليجرام جديد
+const bot = new Telegraf(token);
 const options = new chrome.Options();
 options.addArguments('--headless'); // Run Chrome in headless mode
 
@@ -15,18 +19,19 @@ const driver = new Builder()
     .build();
 
 bot.start((ctx) => {
-    ctx.reply('مرحبًا! يرجى إرسال رقم VIN الخاص بالسيارة.');
+    ctx.reply('مرحبًا! يرجى إرسال رقم VIN الخاص بالسيارة أو رقم السيارة للبحث عن المعلومات.');
 });
 bot.on('text', async (ctx) => {
-    const vin = ctx.message.text.trim();
-    if (vin === '/start') {
-        ctx.reply('يرجى إرسال رقم VIN الخاص بالسيارة.');
-    } else if (vin.length === 17) {
+    const input = ctx.message.text.trim();
+
+    if (input === '/start') {
+        ctx.reply('يرجى إرسال رقم VIN الخاص بالسيارة أو رقم السيارة للبحث عن المعلومات.');
+    } else if (input.length === 17) {
         try {
             await driver.get('https://bimmervin.com/en');
             const vinInput = await driver.findElement(By.id('vin'));
             await vinInput.clear();
-            await vinInput.sendKeys(vin);
+            await vinInput.sendKeys(input);
             const submitButton = await driver.findElement(By.css('button.btn.btn-primary'));
             await submitButton.click();
             await driver.wait(until.elementLocated(By.css('div.col-sm-12.text-start')), 10000);
@@ -55,10 +60,38 @@ bot.on('text', async (ctx) => {
             ctx.reply('حدث خطأ أثناء جلب معلومات السيارة. يرجى المحاولة مرة أخرى.');
         }
     } else {
-        ctx.reply('BIMMERTIRA works with BMW, ALPINA, MINI, Rolls Royce. Type 17 characters of your vehicles identification number and get car specification and equipment information.');
+        try {
+            // عنوان الصفحة المراد زيارتها مع رقم السيارة المعطاة
+            const url = `https://www.check-car.co.il/report/${input}/`;
+
+            // إرسال طلب HTTP لجلب صفحة الويب
+            const response = await axios.get(url);
+
+            // تحليل الصفحة باستخدام cheerio
+            const $ = cheerio.load(response.data);
+
+            // استخراج رقم VIN
+            const vinNumber = $('.table_col[data-name="misgeret"] .value').text().trim();
+
+            // استخراج البيانات المطلوبة من الصفحة
+            const carInfo = $('.add_fav').data();
+
+            // تجميع البيانات في رسالة الرد
+            let replyMessage = `بيانات السيارة:\n`;
+            replyMessage += `الموديل: ${carInfo.model}\n`;
+            replyMessage += `الماركة: ${carInfo.heb}\n`;
+            replyMessage += `السنة: ${carInfo.year}\n`;
+            replyMessage += `النوع: ${carInfo.type}\n`;
+            replyMessage += `رقم VIN: ${vinNumber}\n`;
+               replyMessage += `T̷I̷R̷A̷B̷I̷M̷M̷E̷R̷\n`;
+            // إرسال رسالة الرد إلى المستخدم
+            ctx.reply(replyMessage);
+        } catch (error) {
+            // إرسال رسالة في حالة حدوث خطأ أثناء الاسترجاع
+            ctx.reply('حدث خطأ أثناء جلب المعلومات. يرجى التأكد من صحة رقم السيارة والمحاولة مرة أخرى.');
+        }
     }
 });
-
 
 bot.launch();
 
