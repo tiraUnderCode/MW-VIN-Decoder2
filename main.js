@@ -3,7 +3,7 @@ const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const axios = require('axios');
 
-const CHROMEDRIVER_PATH = './chrome.exe';
+const CHROMEDRIVER_PATH = './chromedrive';
 
 const bot = new Telegraf('6879428578:AAHVQeIwfMBMQUvnoV6hwumA5wgvXS0Mrr8');
 const options = new chrome.Options();
