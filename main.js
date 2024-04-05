@@ -6,7 +6,7 @@ const cheerio = require('cheerio');
 const TelegramBot = require('node-telegram-bot-api');
 
 // تعريف توكن البوت
-const token = '6679199332:AAHqGIBwKE1_9XmK6fIANglEZQ78yzvHn-Q';
+const token = '6879428578:AAHVQeIwfMBMQUvnoV6hwumA5wgvXS0Mrr8';
 
 // إنشاء بوت تليجرام جديد
 const bot = new Telegraf(token);
