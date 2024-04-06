@@ -3,12 +3,10 @@ const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const TelegramBot = require('node-telegram-bot-api');
 
-// تعريف توكن البوت
 const token = '6879428578:AAHVQeIwfMBMQUvnoV6hwumA5wgvXS0Mrr8';
+const CHROMEDRIVER_PATH = './chrome.exe';
 
-// إنشاء بوت تليجرام جديد
 const bot = new Telegraf(token);
 const options = new chrome.Options();
 options.addArguments('--headless'); // Run Chrome in headless mode
@@ -19,83 +17,94 @@ const driver = new Builder()
     .build();
 
 bot.start((ctx) => {
-    ctx.reply('مرحبًا! يرجى إرسال رقم VIN الخاص بالسيارة أو رقم السيارة للبحث عن المعلومات.');
+    ctx.reply('שלח מספר רכב לאיסוף מידע זמין ');
 });
+
 bot.on('text', async (ctx) => {
     const input = ctx.message.text.trim();
 
     if (input === '/start') {
-        ctx.reply('يرجى إرسال رقم VIN الخاص بالسيارة أو رقم السيارة للبحث عن المعلومات.');
+        ctx.reply('שלח מספר רכב או מספר שלדה אם יש לך BMW .');
     } else if (input.length === 17) {
         try {
-            await driver.get('https://bimmervin.com/en');
-            const vinInput = await driver.findElement(By.id('vin'));
-            await vinInput.clear();
-            await vinInput.sendKeys(input);
-            const submitButton = await driver.findElement(By.css('button.btn.btn-primary'));
-            await submitButton.click();
-            await driver.wait(until.elementLocated(By.css('div.col-sm-12.text-start')), 10000);
-            const vehicleInfoElement = await driver.findElement(By.css('div.col-sm-12.text-start'));
-            const vehicleInfo = await vehicleInfoElement.getText();
+    await driver.get('https://bimmervin.com/en');
+await driver.wait(until.elementLocated(By.css('body')), 10000); // Wait for the body element to be present
 
-            // Extract series information
-            const series = extractSeries(vehicleInfo);
-            // Get Wikipedia URL for the series
-            const wikipediaUrl = `http://en.wikipedia.org/wiki/BMW_${series}`;
-            // Send the Wikipedia URL
-            ctx.reply(wikipediaUrl);
+    const vinInput = await driver.findElement(By.id('vin'));
+    await vinInput.clear();
+    await vinInput.sendKeys(input);
+    const submitButton = await driver.findElement(By.css('button.btn.btn-primary'));
+    await submitButton.click();
 
-            // Format the vehicle info with HTML
-            const formattedInfo = `<pre>${vehicleInfo}</pre>`;
-            // Send the formatted info
-            ctx.replyWithHTML(formattedInfo);
+    // Wait for the vehicle info element to be located with an increased timeout
+    const vehicleInfoElement = await driver.wait(until.elementLocated(By.css('div.col-sm-12.text-start')), 30000);
+    // Once located, get the text of the element
+    const vehicleInfo = await vehicleInfoElement.getText();
 
-            // Split the vehicle info and display it as buttons
-            
-            // Send the buttons as an Inline Keyboard
-            ctx.reply('T̷I̷R̷A̷B̷I̷M̷M̷E̷R̷');
+    // Extract series information
+    const series = extractSeries(vehicleInfo);
+    // Get Wikipedia URL for the series
+    const wikipediaUrl = `http://en.wikipedia.org/wiki/BMW_${series}`;
+    // Send the Wikipedia URL
+    ctx.reply(wikipediaUrl);
 
-        } catch (error) {
-            console.error('Error:', error.message);
-            ctx.reply('حدث خطأ أثناء جلب معلومات السيارة. يرجى المحاولة مرة أخرى.');
+    // Format the vehicle info with HTML
+    const formattedInfo = `<pre>${vehicleInfo}</pre>`;
+    // Send the formatted info
+    ctx.replyWithHTML(formattedInfo);
+
+    // Split the vehicle info and display it as buttons
+    const infoLines = vehicleInfo.split('\n');
+    const buttons = infoLines.map(line => {
+        const parts = line.split('\t');
+        if (parts.length === 2) {
+            return [Markup.button.callback(parts[1], parts[0])];
+        } else {
+            return null;
         }
+    }).filter(btn => btn !== null);
+
+    // Send the buttons as an Inline Keyboard
+    ctx.reply('T̷I̷R̷A̷B̷I̷M̷M̷E̷R̷', Markup.inlineKeyboard(buttons.flat()));
+
+} catch (error) {
+    console.error('Error:', error.message);
+    ctx.reply('حدث خطأ أثناء جلب معلومات السيارة. يرجى المحاولة مرة أخرى.');
+}
+
     } else {
         try {
-            // عنوان الصفحة المراد زيارتها مع رقم السيارة المعطاة
             const url = `https://www.check-car.co.il/report/${input}/`;
 
-            // إرسال طلب HTTP لجلب صفحة الويب
             const response = await axios.get(url);
 
-            // تحليل الصفحة باستخدام cheerio
             const $ = cheerio.load(response.data);
 
-            // استخراج رقم VIN
             const vinNumber = $('.table_col[data-name="misgeret"] .value').text().trim();
+            const lastAnnualInspection = $('.table_col[data-name="mivchan_acharon_dt"] .value').text().trim();
+            const licenseValidity = $('.table_col[data-name="tokef_dt"] .activeDate').text().trim();
 
-            // استخراج البيانات المطلوبة من الصفحة
             const carInfo = $('.add_fav').data();
 
-            // تجميع البيانات في رسالة الرد
             let replyMessage = `بيانات السيارة:\n`;
-            replyMessage += `الموديل: ${carInfo.model}\n`;
-            replyMessage += `الماركة: ${carInfo.heb}\n`;
-            replyMessage += `السنة: ${carInfo.year}\n`;
-            replyMessage += `النوع: ${carInfo.type}\n`;
-            replyMessage += `رقم VIN: ${vinNumber}\n`;
-               replyMessage += `T̷I̷R̷A̷B̷I̷M̷M̷E̷R̷\n`;
-            // إرسال رسالة الرد إلى المستخدم
+            replyMessage += `דגם: ${carInfo.model}\n`;
+            replyMessage += `חברה: ${carInfo.heb}\n`;
+            replyMessage += `שנה: ${carInfo.year}\n`;
+            replyMessage += `סוג: ${carInfo.type}\n`;
+            replyMessage += `מספר שלדה| VIN: ${vinNumber}\n`;
+            replyMessage += `טסט אחרון: ${lastAnnualInspection}\n`;
+            replyMessage += `תוקף טסט שנתי: ${licenseValidity}\n`;
+            replyMessage += `T̷I̷R̷A̷B̷I̷M̷M̷E̷R̷\n`;
+
             ctx.reply(replyMessage);
         } catch (error) {
-            // إرسال رسالة في حالة حدوث خطأ أثناء الاسترجاع
-            ctx.reply('حدث خطأ أثناء جلب المعلومات. يرجى التأكد من صحة رقم السيارة والمحاولة مرة أخرى.');
+            ctx.reply('יש לנסות שוב');
         }
     }
 });
 
 bot.launch();
 
-// Extract series information from vehicle info
 function extractSeries(vehicleInfo) {
     const seriesMatch = vehicleInfo.match(/Series\s+(.*?)\n/);
     return seriesMatch ? seriesMatch[1] : '';
