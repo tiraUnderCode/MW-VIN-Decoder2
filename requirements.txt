@@ -1,0 +1,4 @@
+selenium
+telegraf
+beautifulsoup4
+requests
