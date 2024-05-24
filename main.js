@@ -5,7 +5,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 const token = '6879428578:AAHVQeIwfMBMQUvnoV6hwumA5wgvXS0Mrr8';
-const CHROMEDRIVER_PATH = './chrome.exe';
+const CHROMEDRIVER_PATH = './chromedriver';
 
 const bot = new Telegraf(token);
 const options = new chrome.Options();
