@@ -1,3 +1,4 @@
+import { SpeedInsights } from "@vercel/speed-insights/vue"
 const { Telegraf, Markup } = require('telegraf');
 const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
