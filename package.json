@@ -1,9 +1,15 @@
 {
+  "name": "telegram-bot",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
   "dependencies": {
-    "axios": "^1.6.8",
-    "cheerio": "^1.0.0-rc.12",
-    "image-search-engine": "^1.2.1",
-    "selenium-webdriver": "^4.19.0",
-    "telegraf": "^4.16.3"
+    "axios": "^0.21.1",
+    "cheerio": "^1.0.0-rc.5",
+    "selenium-webdriver": "^4.0.0",
+    "telegraf": "^4.0.0",
+    "chromedriver": "^91.0.0"
   }
 }
